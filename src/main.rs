@@ -1,4 +1,4 @@
-use std::{error::Error, fs, path::PathBuf, process::Command, str::FromStr, thread};
+use std::{env, error::Error, fs, path::PathBuf, process::Command, str::FromStr, thread};
 
 use clap::Parser;
 use evdev::Device;
@@ -16,6 +16,15 @@ struct Args {
 const CONFIG_FILE_NAME: &str = "ev-cmd.toml";
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let mut pid_dir = std::env::temp_dir();
+    pid_dir.push("ev-cmd.pid");
+    let lock_dir = match pid_dir.as_os_str().to_str() {
+        None => panic!("unable to acquire pid lock"),
+        Some(x) => x,
+    };
+    let mut lock = pidlock::Pidlock::new(lock_dir);
+    lock.acquire().unwrap();
+
     let args = Args::parse();
 
     let mut cwd_config_path = std::env::current_dir().unwrap();
