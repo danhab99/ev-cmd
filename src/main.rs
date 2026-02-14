@@ -4,7 +4,7 @@ use clap::Parser;
 use evdev::Device;
 
 #[derive(Parser, Debug)]
-#[command()]
+#[command(version, about, long_about = None)]
 struct Args {
     #[arg(short, long)]
     device_path: String,
@@ -16,6 +16,8 @@ struct Args {
 const CONFIG_FILE_NAME: &str = "ev-cmd.toml";
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let args = Args::parse();
+
     let mut pid_dir = std::env::temp_dir();
     pid_dir.push("ev-cmd.pid");
     let lock_dir = match pid_dir.as_os_str().to_str() {
@@ -25,7 +27,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut lock = pidlock::Pidlock::new(lock_dir);
     lock.acquire().unwrap();
 
-    let args = Args::parse();
 
     let mut cwd_config_path = std::env::current_dir().unwrap();
     cwd_config_path.push(CONFIG_FILE_NAME);

@@ -18,11 +18,13 @@
         rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
           extensions = [ "rust-src" "rustfmt" "clippy" ];
         };
+
+        cargotoml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
       in
       {
         packages.default = pkgs.rustPlatform.buildRustPackage {
           pname = "ev-cmd";
-          version = "0.1.0";
+          version = cargotoml.package.version;
           
           src = ./.;
           
