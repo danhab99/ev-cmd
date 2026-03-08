@@ -82,7 +82,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Some(val) => val,
                 None => continue,
             };
-            let c_raw = cmd.to_string();
+            // the toml::Value::to_string() call returns the TOML-formatted
+            // representation, which includes surrounding quotes. Strip them so
+            // the shell receives the raw command text.
+            let mut c_raw = cmd.to_string();
+            if c_raw.starts_with('"') && c_raw.ends_with('"') && c_raw.len() >= 2 {
+                c_raw = c_raw[1..c_raw.len() - 1].to_string();
+            }
 
             thread::spawn(move || {
                 let c = Command::new("/bin/sh")
@@ -90,10 +96,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .output();
                 match c {
                     Ok(o) => {
-                        println!("Executed \"{}\": {:?}", c_raw, String::from_utf8(o.stdout));
+                        println!("Executed {:?}: status={:?}, stdout={:?}, stderr={:?}",
+                            c_raw,
+                            o.status,
+                            String::from_utf8_lossy(&o.stdout),
+                            String::from_utf8_lossy(&o.stderr)
+                        );
                     }
                     Err(e) => {
-                        println!("Failed to execute \"{}\": {}", c_raw, e);
+                        println!("Failed to execute {:?}: {}", c_raw, e);
                     }
                 }
             });
